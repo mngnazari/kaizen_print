@@ -1,0 +1,6 @@
+2025-09-05 13:06:44,555 - Processing file: 5 geram
+2025-09-05 13:06:45,742 -   Found 1 meshes
+2025-09-05 13:06:45,744 -   Only one mesh, no grouping needed
+2025-09-05 13:06:45,750 - Processing file: X1-K3-ang jano jahan
+2025-09-05 13:06:46,107 -   Found 1 meshes
+2025-09-05 13:06:46,107 -   Only one mesh, no grouping needed
