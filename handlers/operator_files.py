@@ -150,30 +150,79 @@ async def send_all_delivery_files(update: Update, context: ContextTypes.DEFAULT_
 
 
 async def send_files_to_operator(query, files, title: str):
-    """تابع ارسال فایل‌ها - بدون تغییر وضعیت"""
+    """تابع ارسال فایل‌ها - با ارسال فایل‌های ادیت شده"""
+    import database.connection
+    from database.editor_models import EditorOriginalFile, ProcessedFile
+
     await query.edit_message_text(f"🔄 در حال ارسال فایل‌های {title}...")
 
     sent_count = 0
 
     for file_order in files:
         try:
-            new_filename = generate_operator_filename(
-                customer_code=file_order.user.customer_code,
-                print_count=file_order.print_count,
-                original_filename=file_order.file_name
-            )
+            # بررسی اینکه آیا فایل ادیت شده داریم یا نه
+            file_id_to_send = file_order.file_id  # پیش‌فرض: فایل اصلی
+            is_edited = False
 
-            await query.message.reply_document(
-                document=file_order.file_id,
-                filename=new_filename,
-                caption=f"📄 **{new_filename}**\n"
-                        f"👤 مشتری: {file_order.user.full_name}\n"
-                        f"🕐 تحویل: {file_order.delivery_datetime.strftime('%Y/%m/%d %H:%M')}\n"
-                        f"📝 توضیحات: {file_order.description or 'ندارد'}",
-                parse_mode="Markdown"
-            )
+            if file_order.assigned_editor_id:
+                # پیدا کردن فایل‌های ادیت شده
+                with database.connection.SessionLocal() as db:
+                    processed_files = db.query(ProcessedFile).join(
+                        EditorOriginalFile
+                    ).filter(
+                        EditorOriginalFile.file_order_id == file_order.id,
+                        ProcessedFile.stl_file_id.isnot(None),
+                        ProcessedFile.stl_received == True
+                    ).all()
 
-            sent_count += 1
+                    if processed_files:
+                        # اگر فایل‌های ادیت شده داریم، اونا رو ارسال میکنیم
+                        for pf in processed_files:
+                            new_filename = generate_operator_filename(
+                                customer_code=file_order.user.customer_code,
+                                print_count=file_order.print_count,
+                                original_filename=pf.processed_filename
+                            )
+
+                            await query.message.reply_document(
+                                document=pf.stl_file_id,
+                                filename=new_filename,
+                                caption=f"📄 **{new_filename}** ✨ (ادیت شده)\n"
+                                        f"👤 مشتری: {file_order.user.full_name}\n"
+                                        f"🕐 تحویل: {file_order.delivery_datetime.strftime('%Y/%m/%d %H:%M')}\n"
+                                        f"📝 توضیحات: {file_order.description or 'ندارد'}",
+                                parse_mode="Markdown"
+                            )
+                            sent_count += 1
+                            is_edited = True
+
+                        # ارسال عکس JPG اگر وجود داشت
+                        for pf in processed_files:
+                            if pf.jpg_file_id and pf.jpg_received:
+                                await query.message.reply_photo(
+                                    photo=pf.jpg_file_id,
+                                    caption=f"🖼️ پیش‌نمایش: {pf.processed_filename}"
+                                )
+
+            # اگر فایل ادیت شده نداشتیم، فایل اصلی رو بفرست
+            if not is_edited:
+                new_filename = generate_operator_filename(
+                    customer_code=file_order.user.customer_code,
+                    print_count=file_order.print_count,
+                    original_filename=file_order.file_name
+                )
+
+                await query.message.reply_document(
+                    document=file_id_to_send,
+                    filename=new_filename,
+                    caption=f"📄 **{new_filename}** ⚠️ (اصلی - بدون ادیت)\n"
+                            f"👤 مشتری: {file_order.user.full_name}\n"
+                            f"🕐 تحویل: {file_order.delivery_datetime.strftime('%Y/%m/%d %H:%M')}\n"
+                            f"📝 توضیحات: {file_order.description or 'ندارد'}",
+                    parse_mode="Markdown"
+                )
+
+                sent_count += 1
 
         except Exception as e:
             print(f"خطا در ارسال فایل {file_order.file_name}: {e}")

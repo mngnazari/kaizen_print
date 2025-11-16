@@ -95,6 +95,44 @@ def create_editor_session(db: Session, editor_id: int, file_orders: List[FileOrd
         raise
 
 
+def get_accessible_files_for_editor(db: Session, status: str = "pending") -> List[FileOrder]:
+    """
+    دریافت فایل‌های قابل دسترس برای ادیتورها با فیلتر تأخیر
+
+    Args:
+        db: database session
+        status: وضعیت فایل (پیش‌فرض: pending)
+
+    Returns:
+        لیست فایل‌های قابل دسترس
+    """
+    from database.crud import get_system_setting
+
+    try:
+        # دریافت تنظیم تأخیر دسترسی
+        delay_minutes = int(get_system_setting(db, "editor_access_delay_minutes", "0"))
+
+        # محاسبه زمان cutoff
+        IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+        now = datetime.now(IRAN_TZ)
+        cutoff_time = now - timedelta(minutes=delay_minutes)
+
+        logger.info(f"🔍 دریافت فایل‌های قابل دسترس - تأخیر: {delay_minutes} دقیقه، cutoff: {cutoff_time}")
+
+        # دریافت فایل‌ها
+        files = db.query(FileOrder).filter(
+            FileOrder.status == status,
+            FileOrder.created_at <= cutoff_time
+        ).options(joinedload(FileOrder.user)).order_by(FileOrder.edit_deadline.asc()).all()
+
+        logger.info(f"✅ تعداد فایل‌های قابل دسترس: {len(files)}")
+        return files
+
+    except Exception as e:
+        logger.error(f"❌ خطا در دریافت فایل‌های قابل دسترس: {e}")
+        return []
+
+
 def get_editor_status(db: Session, editor_id: int) -> str:
     """تشخیص وضعیت فعلی ادیتور"""
     session = get_editor_current_session(db, editor_id)

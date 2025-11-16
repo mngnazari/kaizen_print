@@ -787,10 +787,10 @@ def main() -> None:
     logger.info("✅ Wallet handlers اضافه شدند")
 
     # General callback - باید در آخر باشد
-    # فقط callback های مربوط به file submission
+    # callback های مربوط به file submission
     application.add_handler(CallbackQueryHandler(
         handle_callback_query,
-        pattern=r"^(confirm_order_|cancel_order_)"
+        pattern=r"^(confirm_order_|cancel_order_|edit_count|decrease_count|increase_count|show_count|confirm_count|cancel_count_edit|cancel_order|confirm_delete|back_to_initial)"
     ))
     logger.info("✅ General callback handler اضافه شد")
 

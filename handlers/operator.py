@@ -3,6 +3,8 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes, ConversationHandler
 import database.crud
 import database.connection
+import database.models
+import logging
 from keyboards.operator import (
     get_operator_main_inline_keyboard,
     get_operator_invoice_submenu,
@@ -10,6 +12,8 @@ from keyboards.operator import (
     create_customers_invoice_keyboard,
     create_customer_files_keyboard
 )
+
+logger = logging.getLogger(__name__)
 
 # States برای conversation handler
 (GET_WEIGHT, GET_PHOTO) = range(2)
@@ -415,6 +419,83 @@ async def get_photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption=caption,
                 parse_mode="Markdown"
             )
+
+            # ارسال فایل‌های نهایی به مشتری
+            from database.editor_models import EditorOriginalFile, ProcessedFile
+
+            files_sent = 0
+            for file_order_id in successful_files:
+                file_order = db.query(database.models.FileOrder).get(file_order_id)
+
+                if file_order and file_order.assigned_editor_id:
+                    # پیدا کردن فایل‌های ادیت شده
+                    processed_files = db.query(ProcessedFile).join(
+                        EditorOriginalFile
+                    ).filter(
+                        EditorOriginalFile.file_order_id == file_order_id,
+                        ProcessedFile.stl_file_id.isnot(None),
+                        ProcessedFile.stl_received == True
+                    ).all()
+
+                    if processed_files:
+                        # ارسال فایل‌های STL ادیت شده
+                        for pf in processed_files:
+                            try:
+                                await context.bot.send_document(
+                                    chat_id=customer_id,
+                                    document=pf.stl_file_id,
+                                    filename=pf.processed_filename,
+                                    caption=f"✅ فایل نهایی شما: {pf.processed_filename}"
+                                )
+                                files_sent += 1
+                            except Exception as e:
+                                logger.error(f"خطا در ارسال فایل {pf.processed_filename} به مشتری: {e}")
+
+                        # ارسال عکس‌های JPG اگر وجود داشت
+                        for pf in processed_files:
+                            if pf.jpg_file_id and pf.jpg_received:
+                                try:
+                                    await context.bot.send_photo(
+                                        chat_id=customer_id,
+                                        photo=pf.jpg_file_id,
+                                        caption=f"🖼️ پیش‌نمایش: {pf.processed_filename}"
+                                    )
+                                except Exception as e:
+                                    logger.error(f"خطا در ارسال عکس {pf.processed_filename} به مشتری: {e}")
+                    else:
+                        # اگر فایل ادیت شده نداشت، فایل اصلی رو بفرست
+                        try:
+                            await context.bot.send_document(
+                                chat_id=customer_id,
+                                document=file_order.file_id,
+                                filename=file_order.file_name,
+                                caption=f"📄 فایل شما: {file_order.file_name}"
+                            )
+                            files_sent += 1
+                        except Exception as e:
+                            logger.error(f"خطا در ارسال فایل اصلی {file_order.file_name} به مشتری: {e}")
+                elif file_order:
+                    # اگر ادیتور نداشت، فایل اصلی رو بفرست
+                    try:
+                        await context.bot.send_document(
+                            chat_id=customer_id,
+                            document=file_order.file_id,
+                            filename=file_order.file_name,
+                            caption=f"📄 فایل شما: {file_order.file_name}"
+                        )
+                        files_sent += 1
+                    except Exception as e:
+                        logger.error(f"خطا در ارسال فایل {file_order.file_name} به مشتری: {e}")
+
+            # ارسال پیام تکمیل به مشتری
+            if files_sent > 0:
+                await context.bot.send_message(
+                    chat_id=customer_id,
+                    text=f"🎉 تمام فایل‌های شما آماده است!\n\n"
+                         f"📊 تعداد فایل‌های ارسال شده: {files_sent}\n"
+                         f"💰 مبلغ قابل پرداخت: {invoice.total_amount} دلار\n\n"
+                         f"با تشکر از اعتماد شما! 🙏"
+                )
 
         # پاک کردن داده‌های conversation
         context.user_data.clear()
