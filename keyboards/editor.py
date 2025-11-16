@@ -58,17 +58,16 @@ def get_editor_main_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_editor_customers_keyboard(edit_deadline_time: str) -> InlineKeyboardMarkup:
-    """کیبورد مشتریان - بدون تغییر"""
+    """کیبورد مشتریان - با فیلتر دسترسی"""
     logger.info(f"🔍 شروع ایجاد کیبورد مشتریان برای ددتایم: {edit_deadline_time}")
 
     with database.connection.SessionLocal() as db:
         try:
-            # دریافت همه فایل‌های pending
-            all_files = db.query(database.models.FileOrder).filter(
-                database.models.FileOrder.status == "pending"
-            ).options(joinedload(database.models.FileOrder.user)).all()
+            # دریافت فایل‌های قابل دسترس (به جای همه فایل‌ها)
+            import database.editor_crud as editor_crud
+            all_files = editor_crud.get_accessible_files_for_editor(db, "pending")
 
-            logger.info(f"📊 کل فایل‌های pending: {len(all_files)}")
+            logger.info(f"📊 کل فایل‌های قابل دسترس: {len(all_files)}")
 
             # فیلتر فایل‌ها بر اساس ددتایم ادیت
             matching_files = []

@@ -207,19 +207,35 @@ async def show_editor_pending_files(update: Update, context: ContextTypes.DEFAUL
 
             delivery_groups = defaultdict(list)
             for file_order in accessible_files:
-                time_key = get_shamsi_time_display(file_order)
+                # استفاده از زمان میلادی برای کلید گروه
+                if file_order.edit_deadline:
+                    time_obj = file_order.edit_deadline
+                elif file_order.delivery_datetime:
+                    time_obj = file_order.delivery_datetime - timedelta(hours=18)
+                else:
+                    continue
+
+                # کلید گروه: فرمت میلادی کامل
+                time_key = time_obj.strftime("%Y/%m/%d %H:%M")
                 delivery_groups[time_key].append(file_order)
 
             # ساخت کیبورد
             keyboard_buttons = []
-            for time_display, files in sorted(delivery_groups.items()):
+            for time_gregorian, files in sorted(delivery_groups.items()):
                 count = len(files)
-                # استفاده از فرمت زمان مناسب برای callback
-                time_callback = time_display  # فرمت: mm/dd-HH:MM
+
+                # نمایش به فرمت شمسی برای کاربر
+                try:
+                    dt_obj = datetime.strptime(time_gregorian, "%Y/%m/%d %H:%M")
+                    shamsi_time = jdatetime.datetime.fromgregorian(datetime=dt_obj)
+                    time_display = shamsi_time.strftime('%m/%d-%H:%M')
+                except:
+                    time_display = time_gregorian
+
                 keyboard_buttons.append([
                     InlineKeyboardButton(
                         f"🕐 {time_display} ({count} فایل)",
-                        callback_data=f"editor_delivery_{time_callback}"
+                        callback_data=f"editor_delivery_{time_gregorian}"
                     )
                 ])
 
