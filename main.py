@@ -34,7 +34,8 @@ import database.models
 # ===============================
 
 # --- Start & Registration ---
-from handlers.start import start_command, OPERATORS_IDS
+from handlers.start import start_command
+from config import OPERATORS_IDS
 from handlers.registration import (
     start_registration,
     get_full_name,
@@ -283,8 +284,7 @@ from handlers.broadcast_handler import (
 # ===============================
 # 📂 Config & Initialization
 # ===============================
-ADMIN_ID = 2138687434
-TOKEN = "7943645778:AAEXYzDKUc2D7mWaTcLrSkH4AjlJvVq7PaU"
+from config import TOKEN, ADMIN_ID
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

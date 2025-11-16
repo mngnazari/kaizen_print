@@ -16,12 +16,11 @@ from datetime import datetime, timedelta
 import jdatetime
 import logging
 from sqlalchemy.orm import joinedload
+from config import EDITORS_IDS
 
 # تنظیم لاگر
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-EDITORS_IDS = [7045273026]
 
 
 def get_shamsi_time_display(file_order):

@@ -5,10 +5,9 @@ import database.connection
 import database.editor_crud as editor_crud
 from utils.editor_state_manager import EditorStateManager
 import logging
+from config import EDITORS_IDS
 
 logger = logging.getLogger(__name__)
-
-EDITORS_IDS = [7045273026]  # همان ID ادیتور
 
 
 async def handle_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
