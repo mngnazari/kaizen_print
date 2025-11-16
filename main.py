@@ -34,7 +34,7 @@ import database.models
 # ===============================
 
 # --- Start & Registration ---
-from handlers.start import start_command, OPERATORS_IDS
+from handlers.start import start_command
 from handlers.registration import (
     start_registration,
     get_full_name,
@@ -90,8 +90,7 @@ from handlers.editor import (
     handle_editor_menu,
     handle_editor_callbacks,
     handle_editor_file_upload,
-    show_editor_main_menu,
-    EDITORS_IDS
+    show_editor_main_menu
 )
 
 # --- Vault Management ---
@@ -283,8 +282,7 @@ from handlers.broadcast_handler import (
 # ===============================
 # 📂 Config & Initialization
 # ===============================
-ADMIN_ID = 2138687434
-TOKEN = "7943645778:AAEXYzDKUc2D7mWaTcLrSkH4AjlJvVq7PaU"
+from config import ADMIN_ID, TOKEN, OPERATORS_IDS, EDITORS_IDS, VISITORS_IDS
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

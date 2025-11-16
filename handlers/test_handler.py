@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-EDITORS_IDS = [7045273026]  # همان ID ادیتور
+from config import EDITORS_IDS
 
 
 async def handle_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

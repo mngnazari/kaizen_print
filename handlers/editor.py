@@ -21,7 +21,7 @@ from sqlalchemy.orm import joinedload
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-EDITORS_IDS = [7045273026]
+from config import EDITORS_IDS
 
 
 def get_shamsi_time_display(file_order):
