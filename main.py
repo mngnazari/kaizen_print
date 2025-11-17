@@ -454,14 +454,19 @@ def main() -> None:
     application.add_handler(customer_management_handler)
     logger.info("✅ Customer management handler اضافه شد")
 
-    # هندلر ثبت‌نام
+    # ⚠️ IMPORTANT: handler برای /start باید قبل از ConversationHandler ثبت بشه
+    # این handler برای همه کاربران (ادمین، اپراتور، ادیتور، کاربر عادی) کار میکنه
+    application.add_handler(CommandHandler("start", start_command))
+    logger.info("✅ Start command handler اضافه شد")
+
+    # هندلر ثبت‌نام (فقط برای کاربران عادی که نیاز به ثبت‌نام دارن)
     registration_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start_command)],
+        entry_points=[MessageHandler(filters.Regex(r'^ثبت نام 📝$'), start_registration)],
         states={
             GET_PHONE_NUMBER: [MessageHandler(filters.CONTACT, get_full_name)],
             GET_FULL_NAME: [MessageHandler(filters.TEXT & filters.Regex(r'^[\u0600-\u06FF\s\_]+$'), save_user_info)],
         },
-        fallbacks=[MessageHandler(filters.Regex(r'^ثبت نام 📝$'), start_registration)],
+        fallbacks=[CommandHandler("cancel", lambda u, c: ConversationHandler.END)],
     )
     application.add_handler(registration_handler)
     logger.info("✅ Registration handler اضافه شد")
