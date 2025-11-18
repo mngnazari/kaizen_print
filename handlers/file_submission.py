@@ -444,9 +444,11 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                         await query.edit_message_reply_markup(reply_markup=None)
                         await query.message.reply_text(
                             f"⏰ **زمان ویرایش به پایان رسید**\n\n"
-                            f"متأسفانه فایل شما وارد مرحله پردازش شده و دیگه امکان تغییر نیست\n\n"
-                            f"📊 مدت زمان سپری شده: {minutes_passed} دقیقه\n\n"
-                            f"💡 **نگران نباش!** اگه نیاز به تغییری داری، با پشتیبانی تماس بگیر"
+                            f"فایل شما وارد مرحله پردازش و ارسال به ادیتور شده است.\n"
+                            f"سفارش شما در حال انجام قرار دارد و امکان ویرایش وجود ندارد.\n\n"
+                            f"📊 زمان سپری شده از deadline: {minutes_passed} دقیقه\n\n"
+                            f"💡 **نکته:** اگر نیاز به تغییر دارید، لطفاً با پشتیبانی تماس بگیرید.",
+                            parse_mode="Markdown"
                         )
                         return
                     else:
